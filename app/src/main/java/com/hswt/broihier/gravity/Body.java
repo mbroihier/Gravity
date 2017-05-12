@@ -36,6 +36,10 @@ public class Body {
     public float getY() {
         return currentLocation.y;
     }
+
+    public double getMass() {
+        return mass;
+    }
     public void applyForce(double forceX,double forceY, double deltaT){
         // f = ma
         // a = f/m
@@ -43,8 +47,8 @@ public class Body {
         double aY = forceY/mass;
         velocityX += aX * deltaT;
         velocityY += aY * deltaT;
-        currentLocation.x += (float) (0.5 * aX * deltaT * deltaT);
-        currentLocation.y += (float) (0.5 * aY * deltaT * deltaT);
+        currentLocation.x += (float) (velocityX*deltaT + 0.5 * aX * deltaT * deltaT);
+        currentLocation.y += (float) (velocityY*deltaT + 0.5 * aY * deltaT * deltaT);
     }
 
 }

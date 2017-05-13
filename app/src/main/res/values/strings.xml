@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Gravity</string>
-    <string name="title_activity_gravity">GravityActivity</string>
+    <string name="title_activity_gravity">Gravity</string>
     <string name="action_settings">Settings</string>
 </resources>

@@ -49,18 +49,22 @@ public class UniverseDrawingView extends View {
                         break;
                     }
                     if (bodies.size() > 1) {
-                        for (Body body : bodies) {
-                            double[] forces = forceOnThisBody(body);
-                            //history.add(forces);
-                            body.applyForce(forces[0],forces[1],T);
+                        synchronized (bodies) {
+                            for (Body body : bodies) {
+                                double[] forces = forceOnThisBody(body);
+                                //history.add(forces);
+                                body.applyForce(forces[0], forces[1], T);
+                            }
+                        }
+                        if (GravityActivity.getGravityActivity() != null) {
+                            GravityActivity.getGravityActivity().runOnUiThread(
+                                    new Runnable() {
+                                        public void run() {
+                                            invalidate();
+                                        }
+                                    });
                         }
                     }
-                    GravityActivity.getGravityActivity().runOnUiThread(
-                        new Runnable () {
-                            public void run () {
-                                invalidate();
-                            }
-                        });
 
                 };
                 Log.d(TAG,"finishing runnable");
@@ -77,7 +81,9 @@ public class UniverseDrawingView extends View {
             case MotionEvent.ACTION_DOWN:
                 currentBody = new Body(point,1.0,0.0,100.0);
                 Log.d(TAG,"new body is at "+point.x+ ", "+point.y);
-                bodies.add(currentBody);
+                synchronized (bodies) {
+                    bodies.add(currentBody);
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (currentBody != null) {

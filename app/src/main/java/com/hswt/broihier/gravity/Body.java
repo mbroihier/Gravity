@@ -37,14 +37,30 @@ public class Body {
         return currentLocation.y;
     }
 
+    public void setVelocityX(double velocityX) {
+        this.velocityX = velocityX;
+    }
+
+    public void setVelocityY(double velocityY) {
+        this.velocityY = velocityY;
+    }
+
+    public double getVelocityX() {
+        return velocityX;
+    }
+
+    public double getVelocityY() {
+        return velocityY;
+    }
+
     public double getMass() {
         return mass;
     }
-    public void applyForce(double forceX,double forceY, double deltaT){
+    public void applyForce(double[] forces, double deltaT){
         // f = ma
         // a = f/m
-        double aX = forceX/mass;
-        double aY = forceY/mass;
+        double aX = forces[0]/mass;
+        double aY = forces[1]/mass;
         velocityX += aX * deltaT;
         velocityY += aY * deltaT;
         currentLocation.x += (float) (velocityX*deltaT + 0.5 * aX * deltaT * deltaT);

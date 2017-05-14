@@ -25,6 +25,7 @@ public class UniverseDrawingView extends View {
     private Paint bodyColor;
     private Paint backgroundColor;
     private ArrayList<Body> bodies = new ArrayList<Body>();
+    private ArrayList<Body> projection = new ArrayList<Body>(2000);
 
     public UniverseDrawingView(Context context) {
         this(context,null);
@@ -53,7 +54,7 @@ public class UniverseDrawingView extends View {
                             for (Body body : bodies) {
                                 double[] forces = forceOnThisBody(body);
                                 //history.add(forces);
-                                body.applyForce(forces[0], forces[1], T);
+                                body.applyForce(forces, T);
                             }
                         }
                         if (GravityActivity.getGravityActivity() != null) {
@@ -79,19 +80,45 @@ public class UniverseDrawingView extends View {
         //PointF point = new PointF(event.getX(),bodies.get(0).getY());
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                currentBody = new Body(point,1.0,0.0,100.0);
+                currentBody = new Body(point,1.0,0.0,0.0);
                 Log.d(TAG,"new body is at "+point.x+ ", "+point.y);
-                synchronized (bodies) {
-                    bodies.add(currentBody);
-                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (currentBody != null) {
-                    invalidate();
+                    double velocityX = -(event.getX() - currentBody.getX())*0.6;
+                    double velocityY = -(event.getY() - currentBody.getY())*0.6;
+                    currentBody.setVelocityX(velocityX);
+                    currentBody.setVelocityY(velocityY);
+                    //ArrayList<Body> projection = new ArrayList<Body>(2000);
+                    synchronized(projection) {
+                        projection.removeAll(projection);
+                        projection.add(new Body(new PointF((float) currentBody.getX(), (float) currentBody.getY()), currentBody.getMass(), currentBody.getVelocityX(), currentBody.getVelocityY()));
+                        for (int i = 1; i < 200; i++) {
+                            Body projRef = projection.get(i - 1);
+                            double[] forces = forceOnThisBody(projRef);
+                            projRef.applyForce(forces, T);
+                            forces = forceOnThisBody(projRef);
+                            projRef.applyForce(forces, T);
+                            forces = forceOnThisBody(projRef);
+                            projRef.applyForce(forces, T);
+                            forces = forceOnThisBody(projRef);
+                            projRef.applyForce(forces, T);
+                            projection.add( new Body(new PointF((float) projRef.getX(), (float) projRef.getY()), projRef.getMass(), projRef.getVelocityX(), projRef.getVelocityY()));
+                        }
+                    }
+                    if (bodies.size() < 2) {
+                        invalidate();
+                    }
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                currentBody = null;
+                if (currentBody != null) {
+                    synchronized (bodies) {
+                        bodies.add(currentBody);
+                    }
+                    projection.removeAll(projection);
+                    currentBody = null;
+                }
                 break;
             case MotionEvent.ACTION_CANCEL:
                 currentBody = null;
@@ -104,6 +131,11 @@ public class UniverseDrawingView extends View {
         canvas.drawPaint(backgroundColor);
         for (Body body : bodies) {
             canvas.drawCircle(body.getX(),body.getY(),(float) body.getRadius(),bodyColor);
+        }
+        synchronized (projection) {
+            for (Body body : projection) {
+                canvas.drawCircle(body.getX(),body.getY(),(float) body.getRadius(),bodyColor);
+            }
         }
 
     }
@@ -121,7 +153,7 @@ public class UniverseDrawingView extends View {
 
     private double[] forceOnThisBody(Body body) {
         double[] returnArray = {0.0, 0.0};
-        if (bodies.size() > 1) {
+        if (bodies.size() > 0) {
             double totalForceX = 0.0;
             double totalForceY = 0.0;
             for (Body other : bodies) {

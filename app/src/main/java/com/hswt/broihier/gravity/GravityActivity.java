@@ -8,12 +8,14 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 
 public class GravityActivity extends AppCompatActivity {
 
     private static Activity gravityActivity;
+    private final String TAG = "GravityActivity";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,9 +38,16 @@ public class GravityActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                int numberOfSatellites = UniverseDrawingView.getNumberOfSatellites();
+                double mass = UniverseDrawingView.getStarMass();
+                Snackbar.make(view, "There are " + numberOfSatellites + " satellites\n" +
+                        "The star's mass is: "+mass, Snackbar.LENGTH_LONG)
+                        .setAction("Action",
+                                null
+                        ).show();
             }
+
+
         });
 
         gravityActivity = this;

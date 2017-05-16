@@ -21,9 +21,12 @@ public class UniverseDrawingView extends View {
     private final double T = 0.1;
     private final int T_MILLISECONDS = (int) (T*1000.0);
     private final double EPSILON = 0.000001;
+    private static int numberOfSatellites = 0;
+    private static double starMass = 0.0;
     private Body currentBody;
-    private Paint bodyColor;
+    private Paint starColor;
     private Paint backgroundColor;
+    private Paint satelliteColor;
     private ArrayList<Body> bodies = new ArrayList<Body>();
     private ArrayList<Body> projection = new ArrayList<Body>(2000);
 
@@ -34,10 +37,14 @@ public class UniverseDrawingView extends View {
     public UniverseDrawingView(Context context, AttributeSet attributeSet) {
         super(context,attributeSet);
         Log.d(TAG,"Constructor");
-        bodyColor = new Paint();
-        bodyColor.setColor(0x22ff0000);
+        starColor = new Paint();
+        //starColor.setColor(0x22ff0000);
+        starColor.setColor(0xffff0000);
         backgroundColor = new Paint();
-        backgroundColor.setColor(0xfff8efe0);
+        //backgroundColor.setColor(0xfff8efe0);
+        backgroundColor.setColor(0xff000000);
+        satelliteColor = new Paint();
+        satelliteColor.setColor(0x7f7f7f7f);
         new Thread ( new Runnable() {
             public void run () {
                 //ArrayList<double[]> history = new ArrayList<double[]>();
@@ -52,9 +59,16 @@ public class UniverseDrawingView extends View {
                     if (bodies.size() > 1) {
                         synchronized (bodies) {
                             for (Body body : bodies) {
-                                double[] forces = forceOnThisBody(body);
-                                //history.add(forces);
-                                body.applyForce(forces, T);
+                                if (collision(body)){
+                                    bodies.get(0).setMass(body.getMass());
+                                    starMass = bodies.get(0).getMass();
+                                    bodies.remove(body);
+                                    numberOfSatellites--;
+                                    break;
+                                } else {
+                                    double[] forces = forceOnThisBody(body);
+                                    body.applyForce(forces, T);
+                                }
                             }
                         }
                         if (GravityActivity.getGravityActivity() != null) {
@@ -85,15 +99,14 @@ public class UniverseDrawingView extends View {
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (currentBody != null) {
-                    double velocityX = -(event.getX() - currentBody.getX())*0.6;
-                    double velocityY = -(event.getY() - currentBody.getY())*0.6;
+                    double velocityX = -(event.getX() - currentBody.getX())*0.7;
+                    double velocityY = -(event.getY() - currentBody.getY())*0.7;
                     currentBody.setVelocityX(velocityX);
                     currentBody.setVelocityY(velocityY);
-                    //ArrayList<Body> projection = new ArrayList<Body>(2000);
                     synchronized(projection) {
                         projection.removeAll(projection);
                         projection.add(new Body(new PointF((float) currentBody.getX(), (float) currentBody.getY()), currentBody.getMass(), currentBody.getVelocityX(), currentBody.getVelocityY()));
-                        for (int i = 1; i < 200; i++) {
+                        for (int i = 1; i < 500; i++) {
                             Body projRef = projection.get(i - 1);
                             double[] forces = forceOnThisBody(projRef);
                             projRef.applyForce(forces, T);
@@ -115,6 +128,7 @@ public class UniverseDrawingView extends View {
                 if (currentBody != null) {
                     synchronized (bodies) {
                         bodies.add(currentBody);
+                        numberOfSatellites++;
                     }
                     projection.removeAll(projection);
                     currentBody = null;
@@ -129,12 +143,18 @@ public class UniverseDrawingView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         canvas.drawPaint(backgroundColor);
+        if (bodies.size() <= 0) return;
+        Body star = bodies.get(0);
         for (Body body : bodies) {
-            canvas.drawCircle(body.getX(),body.getY(),(float) body.getRadius(),bodyColor);
+            if (body == star) {
+                canvas.drawCircle(body.getX(), body.getY(), (float) body.getRadius(), starColor);
+            } else {
+                canvas.drawCircle(body.getX(), body.getY(), (float) body.getRadius(), satelliteColor);
+            }
         }
         synchronized (projection) {
             for (Body body : projection) {
-                canvas.drawCircle(body.getX(),body.getY(),(float) body.getRadius(),bodyColor);
+                canvas.drawCircle(body.getX(),body.getY(),(float) body.getRadius(),satelliteColor);
             }
         }
 
@@ -145,20 +165,20 @@ public class UniverseDrawingView extends View {
         float X = (float) (newX / 2.0);
         float Y = (float) (newY / 2.0);
         Log.d(TAG,"Center of Universe is at "+X+ ", "+Y);
-        currentBody = new Body(new PointF(X,Y),1000000.0,0.0,0.0);
+        currentBody = new Body(new PointF(X,Y),100000.0,0.0,0.0);
         currentBody.setRadius(50.0);
         bodies.add(currentBody);
+        starMass = currentBody.getMass();
         invalidate();
     }
 
     private double[] forceOnThisBody(Body body) {
         double[] returnArray = {0.0, 0.0};
-        if (bodies.size() > 0) {
+        if (bodies.size() > 0 ) { //&& body != bodies.get(0)) {
             double totalForceX = 0.0;
             double totalForceY = 0.0;
             for (Body other : bodies) {
                 if (other == body) {
-                    //Log.d(TAG, "Skipping - this is self");
                     continue;
                 }
                 double deltaX = body.getX() - other.getX();
@@ -177,8 +197,28 @@ public class UniverseDrawingView extends View {
             }
             returnArray[0] = totalForceX;
             returnArray[1] = totalForceY;
+            //Log.d(TAG,"ForceX="+totalForceX+", ForceY="+totalForceY);
         }
         return returnArray;
+    }
+    private boolean collision(Body body) {
+        if (body == bodies.get(0)) {
+            return false;
+        }
+        Body sunReference = bodies.get(0);
+        if (body.getRadius() + sunReference.getRadius() > Math.sqrt(
+                Math.pow(body.getX()-sunReference.getX(),2)+Math.pow(body.getY()-sunReference.getY(),2))) {
+            return true;
+        }
+        return false;
+    }
+
+    public static int getNumberOfSatellites() {
+        return  numberOfSatellites;
+    }
+
+    public static double getStarMass() {
+        return  starMass;
     }
 
 }

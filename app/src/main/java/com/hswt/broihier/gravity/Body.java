@@ -56,6 +56,9 @@ public class Body {
     public double getMass() {
         return mass;
     }
+    public void setMass(double massDelta) {
+        this.mass += massDelta;
+    }
     public void applyForce(double[] forces, double deltaT){
         // f = ma
         // a = f/m

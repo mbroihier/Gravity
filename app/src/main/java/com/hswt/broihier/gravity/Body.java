@@ -1,5 +1,6 @@
 package com.hswt.broihier.gravity;
 
+import android.graphics.Paint;
 import android.graphics.PointF;
 
 /**
@@ -12,13 +13,15 @@ public class Body {
     private double mass;
     private double velocityX;
     private double velocityY;
+    private Paint color;
 
-    public Body(PointF location, double mass, double velocityX, double velocityY) {
+    public Body(PointF location, double mass, double velocityX, double velocityY, Paint color) {
         this.currentLocation = location;
         this.mass = mass;
         this.velocityX = velocityX;
         this.velocityY = velocityY;
         this.radius = 10;
+        this.color = color;
     }
 
     public double getRadius() {
@@ -59,6 +62,11 @@ public class Body {
     public void setMass(double massDelta) {
         this.mass += massDelta;
     }
+
+    public Paint getColor() {
+        return color;
+    }
+
     public void applyForce(double[] forces, double deltaT){
         // f = ma
         // a = f/m

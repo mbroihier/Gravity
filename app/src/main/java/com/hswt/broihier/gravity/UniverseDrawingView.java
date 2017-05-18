@@ -38,10 +38,8 @@ public class UniverseDrawingView extends View {
         super(context,attributeSet);
         Log.d(TAG,"Constructor");
         starColor = new Paint();
-        //starColor.setColor(0x22ff0000);
         starColor.setColor(0xffff0000);
         backgroundColor = new Paint();
-        //backgroundColor.setColor(0xfff8efe0);
         backgroundColor.setColor(0xff000000);
         satelliteColor = new Paint();
         satelliteColor.setColor(0x7f7f7f7f);
@@ -94,7 +92,7 @@ public class UniverseDrawingView extends View {
         //PointF point = new PointF(event.getX(),bodies.get(0).getY());
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                currentBody = new Body(point,1.0,0.0,0.0);
+                currentBody = new Body(point,1.0,0.0,0.0,satelliteColor);
                 Log.d(TAG,"new body is at "+point.x+ ", "+point.y);
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -105,7 +103,7 @@ public class UniverseDrawingView extends View {
                     currentBody.setVelocityY(velocityY);
                     synchronized(projection) {
                         projection.removeAll(projection);
-                        projection.add(new Body(new PointF((float) currentBody.getX(), (float) currentBody.getY()), currentBody.getMass(), currentBody.getVelocityX(), currentBody.getVelocityY()));
+                        projection.add(new Body(new PointF((float) currentBody.getX(), (float) currentBody.getY()), currentBody.getMass(), currentBody.getVelocityX(), currentBody.getVelocityY(),satelliteColor));
                         for (int i = 1; i < 500; i++) {
                             Body projRef = projection.get(i - 1);
                             double[] forces = forceOnThisBody(projRef);
@@ -116,7 +114,7 @@ public class UniverseDrawingView extends View {
                             projRef.applyForce(forces, T);
                             forces = forceOnThisBody(projRef);
                             projRef.applyForce(forces, T);
-                            projection.add( new Body(new PointF((float) projRef.getX(), (float) projRef.getY()), projRef.getMass(), projRef.getVelocityX(), projRef.getVelocityY()));
+                            projection.add( new Body(new PointF((float) projRef.getX(), (float) projRef.getY()), projRef.getMass(), projRef.getVelocityX(), projRef.getVelocityY(),satelliteColor));
                         }
                     }
                     if (bodies.size() < 2) {
@@ -144,17 +142,12 @@ public class UniverseDrawingView extends View {
     public void onDraw(Canvas canvas) {
         canvas.drawPaint(backgroundColor);
         if (bodies.size() <= 0) return;
-        Body star = bodies.get(0);
         for (Body body : bodies) {
-            if (body == star) {
-                canvas.drawCircle(body.getX(), body.getY(), (float) body.getRadius(), starColor);
-            } else {
-                canvas.drawCircle(body.getX(), body.getY(), (float) body.getRadius(), satelliteColor);
-            }
+            canvas.drawCircle(body.getX(), body.getY(), (float) body.getRadius(), body.getColor());
         }
         synchronized (projection) {
             for (Body body : projection) {
-                canvas.drawCircle(body.getX(),body.getY(),(float) body.getRadius(),satelliteColor);
+                canvas.drawCircle(body.getX(),body.getY(),(float) body.getRadius(),body.getColor());
             }
         }
 
@@ -165,7 +158,7 @@ public class UniverseDrawingView extends View {
         float X = (float) (newX / 2.0);
         float Y = (float) (newY / 2.0);
         Log.d(TAG,"Center of Universe is at "+X+ ", "+Y);
-        currentBody = new Body(new PointF(X,Y),100000.0,0.0,0.0);
+        currentBody = new Body(new PointF(X,Y),100000.0,0.0,0.0,starColor);
         currentBody.setRadius(50.0);
         bodies.add(currentBody);
         starMass = currentBody.getMass();
